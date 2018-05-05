@@ -1,0 +1,16 @@
+version: "3"
+services:
+  postgresql:
+    image: postgres:alpine
+    ports:
+      - 15432:5432
+
+  sqlserver:
+    image: microsoft/mssql-server-linux:2017-CU6
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: KimosTestsPassw0rd!
+      MSSQL_PID: Express
+    ports:
+      - 11433:1433
+

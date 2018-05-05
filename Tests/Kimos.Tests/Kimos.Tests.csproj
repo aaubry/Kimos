@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp2.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AutoFixture" Version="4.2.1" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.2" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+        <PackageReference Include="xunit" Version="2.3.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Kimos\Kimos.csproj" />
+        <ProjectReference Include="..\Kimos.Tests.Common\Kimos.Tests.Common.csproj" />
+        <ProjectReference Include="..\Kimos.Tests.PostgreSql\Kimos.Tests.PostgreSql.csproj" />
+        <ProjectReference Include="..\Kimos.Tests.SqlServer\Kimos.Tests.SqlServer.csproj" />
+    </ItemGroup>
+
+    <Target Name="CopyToOut" BeforeTargets="BeforeBuild">
+        <Copy SourceFiles="$(ProjectDir)appsettings.json" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    </Target>
+
+</Project>

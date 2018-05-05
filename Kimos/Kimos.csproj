@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Antoine Aubry</Authors>
+    <Description>Kimos is a library that extends Entity Framework, enabling the use of CRUD operations without having to load the entities first. It currently supports the following operations:
+
+* Insert
+* Update
+* Upsert (insert or update)
+* Delete</Description>
+    <Copyright>Antoine Aubry</Copyright>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/aaubry/Kimos/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/aaubry/Kimos</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aaubry/Kimos</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.0.2" />
+    <PackageReference Include="Dapper" Version="1.50.4" />
+  </ItemGroup>
+
+</Project>

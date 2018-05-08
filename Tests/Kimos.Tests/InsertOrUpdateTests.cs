@@ -19,6 +19,7 @@
 using AutoFixture;
 using Kimos.Tests.Common.DataModel;
 using Microsoft.EntityFrameworkCore.Design;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
@@ -589,6 +590,47 @@ namespace Kimos.Tests
                 var inserted = context.Entities.Single(e => e.Id == insertResult.Id);
                 Assert.Equal(upsertParams.Name, inserted.Name);
                 Assert.Equal(upsertParams.Version, inserted.Version);
+            }
+        }
+
+        [Theory]
+        [ClassData(typeof(DbContextFactories))]
+        public void InsertOrUpdate_UpdateWithTernary(IDesignTimeDbContextFactory<TestDbContext> contextFactory)
+        {
+            // Arrange
+            var upsertParams = fixture.Create<UpsertParams>();
+            using (var context = contextFactory.CreateDbContext(null))
+            {
+                context.Entities.Add(new TestEntity
+                {
+                    Name = upsertParams.Name,
+                    Version = upsertParams.Version,
+                });
+                context.SaveChanges();
+            }
+
+            // Act
+            int rowCount;
+            using (var context = contextFactory.CreateDbContext(null))
+            {
+                rowCount = builder
+                    .CreateCommand<TestEntity>()
+                    .Update<UpsertParams>((e, p) => new TestEntity
+                    {
+                        Version = e.Version < 5 ? e.Version + 1 : e.Version,
+                    })
+                    .Log(context, output)
+                    .Create(context)
+                    .Execute(context.Database, upsertParams);
+            }
+
+            // Assert
+            Assert.NotEqual(0, rowCount);
+
+            using (var context = contextFactory.CreateDbContext(null))
+            {
+                var inserted = context.Entities.Single(e => e.Name == upsertParams.Name);
+                Assert.Equal(upsertParams.Version < 5 ? upsertParams.Version + 1 : upsertParams.Version, inserted.Version);
             }
         }
 

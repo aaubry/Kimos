@@ -16,11 +16,11 @@
 // along with Kimos.  If not, see <http://www.gnu.org/licenses/>.
 // 
 
+using Kimos.Drivers;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
-using Kimos.Drivers;
 
 namespace Kimos.Helpers
 {
@@ -129,5 +129,51 @@ namespace Kimos.Helpers
 			output.Append(')');
 			return node;
 		}
-	}
+
+        protected override Expression VisitConditional(ConditionalExpression node)
+        {
+            output.Append("case when ");
+            Visit(node.Test);
+            output.Append(" then ");
+            Visit(node.IfTrue);
+            output.Append(" else ");
+            Visit(node.IfFalse);
+            output.Append(" end");
+            return node;
+        }
+
+        private Exception ExpressionNotSupported(Expression node) => new NotSupportedException($"{node.NodeType} expressions are not supported. Cannot convert expression {node} to SQL");
+
+        protected override Expression VisitBlock(BlockExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitDebugInfo(DebugInfoExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitDefault(DefaultExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitDynamic(DynamicExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitExtension(Expression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitGoto(GotoExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitIndex(IndexExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitInvocation(InvocationExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitLabel(LabelExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitLambda<T>(Expression<T> node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitListInit(ListInitExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitLoop(LoopExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitMemberInit(MemberInitExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitMethodCall(MethodCallExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitNew(NewExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitNewArray(NewArrayExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitParameter(ParameterExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitRuntimeVariables(RuntimeVariablesExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitSwitch(SwitchExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitTry(TryExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitTypeBinary(TypeBinaryExpression node) => throw ExpressionNotSupported(node);
+        protected override Expression VisitUnary(UnaryExpression node) => throw ExpressionNotSupported(node);
+
+        protected override ElementInit VisitElementInit(ElementInit node) => throw new NotSupportedException($"ElementInit in expressions are not supported. Cannot convert {node} to SQL");
+        protected override LabelTarget VisitLabelTarget(LabelTarget node) => throw new NotSupportedException($"LabelTarget in expressions are not supported. Cannot convert {node} to SQL");
+        protected override MemberAssignment VisitMemberAssignment(MemberAssignment node) => throw new NotSupportedException($"MemberAssignment in expressions are not supported. Cannot convert {node} to SQL");
+        protected override MemberBinding VisitMemberBinding(MemberBinding node) => throw new NotSupportedException($"MemberBinding in expressions are not supported. Cannot convert {node} to SQL");
+        protected override MemberListBinding VisitMemberListBinding(MemberListBinding node) => throw new NotSupportedException($"MemberListBinding in expressions are not supported. Cannot convert {node} to SQL");
+        protected override MemberMemberBinding VisitMemberMemberBinding(MemberMemberBinding node) => throw new NotSupportedException($"MemberMemberBinding in expressions are not supported. Cannot convert {node} to SQL");
+        protected override SwitchCase VisitSwitchCase(SwitchCase node) => throw new NotSupportedException($"SwitchCase in expressions are not supported. Cannot convert {node} to SQL");
+        protected override CatchBlock VisitCatchBlock(CatchBlock node) => throw new NotSupportedException($"CatchBlock in expressions are not supported. Cannot convert {node} to SQL");
+    }
 }

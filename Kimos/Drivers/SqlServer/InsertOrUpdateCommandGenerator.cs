@@ -79,10 +79,13 @@ namespace Kimos.Drivers.SqlServer
                                 {
                                     { command.Insert.Parameters[0], ParameterSyntaxType.Source },
                                 }, metadata, Quoter).Visit(assignment.Expression);
+
+                            commandText.Append(" and ");
                         }
                     }
                 ).Visit(command.Insert);
 
+                commandText.Length -= 5; // Remove last 'and'
                 commandText.AppendLine(")");
 
 

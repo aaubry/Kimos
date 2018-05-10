@@ -2,6 +2,8 @@ version: "3"
 services:
   postgresql:
     image: postgres:alpine
+    environment:
+      POSTGRES_PASSWORD: KimosTestsPassw0rd!
     ports:
       - 15432:5432
 

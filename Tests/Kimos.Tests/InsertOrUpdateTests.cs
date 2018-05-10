@@ -634,10 +634,49 @@ namespace Kimos.Tests
             }
         }
 
+        [Theory]
+        [ClassData(typeof(DbContextFactories))]
+        public void InsertOrUpdate_UpdateWithNullable(IDesignTimeDbContextFactory<TestDbContext> contextFactory)
+        {
+            // Arrange
+            var upsertParams = fixture.Create<UpsertParams>();
+            using (var context = contextFactory.CreateDbContext(null))
+            {
+                context.Entities.Add(new TestEntity
+                {
+                    Name = upsertParams.Name,
+                    Version = upsertParams.Version,
+                });
+                context.SaveChanges();
+            }
+
+            upsertParams.NullableVersion = null;
+
+            // Act
+            int rowCount;
+            using (var context = contextFactory.CreateDbContext(null))
+            {
+                rowCount = builder
+                    .CreateCommand<TestEntity>()
+                    .Update<UpsertParams>((e, p) => new TestEntity
+                    {
+                        Version = 1,
+                    })
+                    .Where((e, p) => e.Version == p.NullableVersion || p.NullableVersion == null)
+                    .Log(context, output)
+                    .Create(context)
+                    .Execute(context.Database, upsertParams);
+            }
+
+            // Assert
+            Assert.NotEqual(0, rowCount);
+        }
+
         private class UpsertParams
         {
             public int Id { get; set; }
             public int Version { get; set; }
+            public int? NullableVersion { get; set; }
             public string Name { get; set; }
         }
 

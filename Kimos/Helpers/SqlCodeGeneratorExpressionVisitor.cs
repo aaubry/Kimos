@@ -25,110 +25,167 @@ using System.Text;
 namespace Kimos.Helpers
 {
     public class SqlCodeGeneratorExpressionVisitor : ExpressionVisitor
-	{
-		private readonly StringBuilder output;
-		private readonly Dictionary<Expression, ParameterSyntaxType> parameterMappings;
-		private readonly IQueryMetadata tableMetadata;
+    {
+        private readonly StringBuilder output;
+        private readonly Dictionary<Expression, ParameterSyntaxType> parameterMappings;
+        private readonly IQueryMetadata tableMetadata;
         private readonly IdentifierQuoter quoter;
 
         public SqlCodeGeneratorExpressionVisitor(StringBuilder output, Dictionary<Expression, ParameterSyntaxType> parameterMappings, IQueryMetadata tableMetadata, IdentifierQuoter quoter)
-		{
-			this.output = output;
-			this.parameterMappings = parameterMappings;
-			this.tableMetadata = tableMetadata;
+        {
+            this.output = output;
+            this.parameterMappings = parameterMappings;
+            this.tableMetadata = tableMetadata;
             this.quoter = quoter;
         }
 
-		protected override Expression VisitMember(MemberExpression node)
-		{
+        protected override Expression VisitMember(MemberExpression node)
+        {
             ParameterSyntaxType type;
             if (parameterMappings == null)
-			{
-				type = ParameterSyntaxType.Argument;
-			}
-			else
-			{
-				Expression parameterNode;
-				MemberExpression current = node;
-				do
-				{
-					parameterNode = current.Expression;
-					current = parameterNode as MemberExpression;
-				} while (current != null);
+            {
+                type = ParameterSyntaxType.Argument;
+            }
+            else
+            {
+                Expression parameterNode;
+                MemberExpression current = node;
+                do
+                {
+                    parameterNode = current.Expression;
+                    current = parameterNode as MemberExpression;
+                } while (current != null);
 
-				type = parameterMappings[parameterNode];
-			}
+                type = parameterMappings[parameterNode];
+            }
 
-			switch (type)
-			{
-				case ParameterSyntaxType.None:
-					output.Append(quoter.QuoteName(tableMetadata.ColumnMappings[node.Member.Name]));
-					break;
+            switch (type)
+            {
+                case ParameterSyntaxType.None:
+                    output.Append(quoter.QuoteName(tableMetadata.ColumnMappings[node.Member.Name]));
+                    break;
 
-				case ParameterSyntaxType.Target:
-					output.Append("T.").Append(quoter.QuoteName(tableMetadata.ColumnMappings[node.Member.Name]));
-					break;
+                case ParameterSyntaxType.Target:
+                    output.Append("T.").Append(quoter.QuoteName(tableMetadata.ColumnMappings[node.Member.Name]));
+                    break;
 
-				case ParameterSyntaxType.Source:
-					output.Append("S.").Append(quoter.QuoteName(tableMetadata.GetParameterName(node)));
-					break;
+                case ParameterSyntaxType.Source:
+                    output.Append("S.").Append(quoter.QuoteName(tableMetadata.GetParameterName(node)));
+                    break;
 
-				case ParameterSyntaxType.Argument:
-					output.AppendFormat("@{0}", tableMetadata.GetParameterName(node));
-					break;
-			}
-			return node;
-		}
+                case ParameterSyntaxType.Argument:
+                    output.AppendFormat("@{0}", tableMetadata.GetParameterName(node));
+                    break;
+            }
+            return node;
+        }
 
-		protected override Expression VisitConstant(ConstantExpression node)
-		{
-			var value = node.Value;
-			if (value == null)
-			{
-				output.Append("NULL");
-			}
-			else
-			{
-				var type = Nullable.GetUnderlyingType(node.Type) ?? node.Type;
-				switch (Type.GetTypeCode(type))
-				{
-					case TypeCode.Boolean:
-						output.Append(true.Equals(value) ? 1 : 0);
-						break;
-					
-					default:
-						output.Append(value);
-						break;
-				}
-			}
-			return node;
-		}
+        protected override Expression VisitConstant(ConstantExpression node)
+        {
+            var value = node.Value;
+            if (value == null)
+            {
+                output.Append("NULL");
+            }
+            else
+            {
+                var type = Nullable.GetUnderlyingType(node.Type) ?? node.Type;
+                switch (Type.GetTypeCode(type))
+                {
+                    case TypeCode.Boolean:
+                        output.Append(true.Equals(value) ? 1 : 0);
+                        break;
 
-		private static readonly Dictionary<ExpressionType, string> operators = new Dictionary<ExpressionType, string>
-		{
-			{ ExpressionType.Add, "+" },
-			{ ExpressionType.Subtract, "-" },
-			{ ExpressionType.Multiply, "*" },
-			{ ExpressionType.Divide, "/" },
-			{ ExpressionType.Equal, "=" },
-			{ ExpressionType.NotEqual, "<>" },
-			{ ExpressionType.GreaterThan, ">" },
-			{ ExpressionType.GreaterThanOrEqual, ">=" },
-			{ ExpressionType.LessThan, "<" },
-			{ ExpressionType.LessThanOrEqual, "<=" },
-			{ ExpressionType.AndAlso, "and" },
-			{ ExpressionType.OrElse, "or" },
-		};
+                    default:
+                        output.Append(value);
+                        break;
+                }
+            }
+            return node;
+        }
 
-		protected override Expression VisitBinary(BinaryExpression node)
-		{
-			output.Append('(');
-			Visit(node.Left);
-			output.Append(' ').Append(operators[node.NodeType]).Append(' ');
-			Visit(node.Right);
-			output.Append(')');
-			return node;
-		}
+        protected override Expression VisitBinary(BinaryExpression node)
+        {
+            output.Append('(');
+            Visit(node.Left);
+            output.Append(' ');
+
+            var rightIsNull = node.Right is ConstantExpression constant && constant.Value == null;
+            switch (node.NodeType)
+            {
+                case ExpressionType.Equal:
+                    if (rightIsNull)
+                    {
+                        output.Append("is null)");
+                        return node;
+                    }
+                    else
+                    {
+                        output.Append("=");
+                    }
+                    break;
+
+                case ExpressionType.NotEqual:
+                    if (rightIsNull)
+                    {
+                        output.Append("is not null)");
+                        return node;
+                    }
+                    else
+                    {
+                        output.Append("<>");
+                    }
+                    break;
+
+                case ExpressionType.Add:
+                    output.Append("+");
+                    break;
+
+                case ExpressionType.Subtract:
+                    output.Append("-");
+                    break;
+
+                case ExpressionType.Multiply:
+                    output.Append("*");
+                    break;
+
+                case ExpressionType.Divide:
+                    output.Append("/");
+                    break;
+
+                case ExpressionType.GreaterThan:
+                    output.Append(">");
+                    break;
+
+                case ExpressionType.GreaterThanOrEqual:
+                    output.Append(">=");
+                    break;
+
+                case ExpressionType.LessThan:
+                    output.Append("<");
+                    break;
+
+                case ExpressionType.LessThanOrEqual:
+                    output.Append("<=");
+                    break;
+
+                case ExpressionType.AndAlso:
+                    output.Append("and");
+                    break;
+
+                case ExpressionType.OrElse:
+                    output.Append("or");
+                    break;
+
+                default:
+                    throw ExpressionNotSupported(node);
+            }
+
+            output.Append(' ');
+            Visit(node.Right);
+            output.Append(')');
+            return node;
+        }
 
         protected override Expression VisitConditional(ConditionalExpression node)
         {
@@ -142,7 +199,20 @@ namespace Kimos.Helpers
             return node;
         }
 
-        private Exception ExpressionNotSupported(Expression node) => new NotSupportedException($"{node.NodeType} expressions are not supported. Cannot convert expression {node} to SQL");
+        protected override Expression VisitUnary(UnaryExpression node)
+        {
+            switch (node.NodeType)
+            {
+                case ExpressionType.Convert:
+                    Visit(node.Operand);
+                    return node;
+
+                default:
+                    throw ExpressionNotSupported(node);
+            }
+        }
+
+        private Exception ExpressionNotSupported(Expression node) => new NotSupportedException($"{node.NodeType} expressions ({node.GetType().Name}) are not supported. Cannot convert expression {node} to SQL");
 
         protected override Expression VisitBlock(BlockExpression node) => throw ExpressionNotSupported(node);
         protected override Expression VisitDebugInfo(DebugInfoExpression node) => throw ExpressionNotSupported(node);
@@ -165,7 +235,6 @@ namespace Kimos.Helpers
         protected override Expression VisitSwitch(SwitchExpression node) => throw ExpressionNotSupported(node);
         protected override Expression VisitTry(TryExpression node) => throw ExpressionNotSupported(node);
         protected override Expression VisitTypeBinary(TypeBinaryExpression node) => throw ExpressionNotSupported(node);
-        protected override Expression VisitUnary(UnaryExpression node) => throw ExpressionNotSupported(node);
 
         protected override ElementInit VisitElementInit(ElementInit node) => throw new NotSupportedException($"ElementInit in expressions are not supported. Cannot convert {node} to SQL");
         protected override LabelTarget VisitLabelTarget(LabelTarget node) => throw new NotSupportedException($"LabelTarget in expressions are not supported. Cannot convert {node} to SQL");

@@ -2,8 +2,6 @@ mode: ContinuousDeployment
 branches:
   master:
     mode: ContinuousDeployment
-    tag: pre
-  release:
-    mode: ContinuousDelivery
+    tag: ''
 ignore:
   sha: []

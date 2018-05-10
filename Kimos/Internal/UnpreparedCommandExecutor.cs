@@ -18,11 +18,11 @@
 
 using Dapper;
 using Kimos.Syntax;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System;
 using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Threading.Tasks;
 
 namespace Kimos.Internal
@@ -103,6 +103,11 @@ namespace Kimos.Internal
         public Task<IEnumerable<TResult>> QueryAsync(DatabaseFacade database, TParams parameters)
         {
             return ExecuteInternalAsync(database, (connection, transaction, commandText) => connection.QueryAsync<TResult>(commandText, parameters, transaction));
+        }
+
+        public override string ToString()
+        {
+            return commandText;
         }
     }
 }
